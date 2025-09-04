@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Code, Eye, Play, Download, Copy, Settings, Image, Link, FileText, MessageSquare, Send, History, ChevronLeft, ChevronRight, FolderOpen, FilePlus, Heart, Upload, Star } from 'lucide-react';
+import { getConversationalResponse } from '../src/IDE/services/aiService';
 
 type Framework = 'react-tailwind' | 'vue-unocss' | 'html-css';
 
@@ -431,23 +432,9 @@ User wants to refine it with: "${chatInput}"
 
 Please provide an updated version of the component that addresses the user's request. Return only the updated code, no explanations.`;
 
-      const response = await fetch('/api/openrouter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: refinementPrompt,
-          mode: 'code',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      const refinedCode = result.response?.trim() || result.code || '';
+      const apiKey = process.env.GEMINI_API_KEY || null;
+      const result = await getConversationalResponse(refinementPrompt, 'code', apiKey);
+      const refinedCode = result.trim() || '';
 
       // Update the generated code and preview
       setGeneratedCode(refinedCode);

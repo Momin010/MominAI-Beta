@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Send, Code, MessageSquare, Building } from 'lucide-react';
 import { EditorAgent, EditorCommand, executeEditorCommands } from '../lib/editor-agent';
+import { getConversationalResponse } from '../src/IDE/services/aiService';
 
 interface Message {
   id: string;
@@ -258,26 +259,12 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     addMessage(userMessage);
 
     try {
-      // Call AI through OpenRouter API route
-      const response = await fetch('/api/openrouter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: promptText,
-          mode: currentMode,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const result = await response.json();
+      // Call AI through Gemini service
+      const apiKey = process.env.GEMINI_API_KEY || null;
+      const result = await getConversationalResponse(promptText, currentMode, apiKey);
 
       // Parse response to extract JSON commands and conversational text
-      const { conversationalText, commands, taskCommands, projectCommands } = parseResponse(result.response);
+      const { conversationalText, commands, taskCommands, projectCommands } = parseResponse(result);
 
       // Check if this involves multi-file project creation
       const hasMultiFileProject = projectCommands.length > 0 || (commands.length > 3); // More than 3 commands likely indicates multi-file
@@ -312,14 +299,14 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
       addMessage(aiMessage);
 
       try {
-        toast.success('OpenRouter response received successfully!');
+        toast.success('Gemini response received successfully!');
       } catch (toastError) {
-        console.log('Success: OpenRouter response received successfully!');
+        console.log('Success: Gemini response received successfully!');
       }
       setLastError(null);
       setCanRetry(false);
     } catch (err) {
-      console.error('OpenRouter API Error:', err);
+      console.error('Gemini API Error:', err);
 
       let errorMessage = 'An unexpected error occurred';
       let errorType = 'unknown';
@@ -328,8 +315,8 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
       if (err instanceof Error) {
         const message = err.message.toLowerCase();
 
-        if (message.includes('api key') || message.includes('authorization')) {
-          errorMessage = 'API key is invalid or missing. Please check your OpenRouter API key configuration.';
+        if (message.includes('api key') || message.includes('authorization') || message.includes('invalid')) {
+          errorMessage = 'API key is invalid or missing. Please check your Gemini API key configuration.';
           errorType = 'auth';
           shouldAllowRetry = false;
         } else if (message.includes('network') || message.includes('fetch')) {
