@@ -2,6 +2,9 @@ export interface Diagnostic {
   line: number;
   message: string;
   source?: string;
+  startCol?: number;
+  endCol?: number;
+  severity?: 'error' | 'warning' | 'info';
 }
 
 export interface DependencyReport {
@@ -44,5 +47,45 @@ export interface FileSystemNode {
   name: string;
   type: 'file' | 'directory';
   content?: string;
-  children?: FileSystemNode[];
+  children?: Record<string, FileSystemNode>;
+}
+
+export type Theme = 'deep-space' | 'nordic-light';
+
+export interface Directory extends FileSystemNode {
+  type: 'directory';
+  children: Record<string, FileSystemNode>;
+}
+
+export interface GistApiResponse {
+  id: string;
+  url: string;
+  html_url: string;
+  files: Record<string, {
+    filename?: string;
+    type?: string;
+    language?: string;
+    raw_url?: string;
+    size?: number;
+    content?: string;
+  }>;
+  public: boolean;
+  created_at: string;
+  updated_at: string;
+  description: string;
+  comments: number;
+  user: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  } | null;
+  comments_url: string;
+  owner: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  };
+  truncated: boolean;
 }
