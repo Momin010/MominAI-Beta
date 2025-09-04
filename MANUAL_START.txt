@@ -1,0 +1,50 @@
+===========================================
+   MominAI Hybrid Sandbox - Manual Start
+===========================================
+
+If the batch files don't work, try these manual commands:
+
+1. Open Command Prompt or PowerShell
+2. Navigate to your project folder:
+   cd "c:\Users\momin.aldahdouh\MominAI.sandbox"
+
+3. Run this command to start the server:
+   "node-v22.19.0-win-x64\node.exe" "node-v22.19.0-win-x64\node_modules\npm\bin\npm-cli.js" run dev -- -p 3001
+
+4. If that doesn't work, try:
+   node-v22.19.0-win-x64\npm.cmd run dev -- -p 3001
+
+5. Or the most basic approach:
+   node-v22.19.0-win-x64\node.exe node_modules\.bin\next dev -p 3001
+
+===========================================
+   Alternative: Use System Node.js
+===========================================
+
+If you have Node.js installed globally:
+
+1. Open Command Prompt
+2. Navigate to project: cd "c:\Users\momin.aldahdouh\MominAI.sandbox"
+3. Run: npm run dev -- -p 3001
+
+===========================================
+   Troubleshooting
+===========================================
+
+If you get "command not found":
+- Check if files exist in node-v22.19.0-win-x64\ folder
+- Try running as Administrator
+- Check antivirus/firewall blocking execution
+
+===========================================
+   Expected Output
+===========================================
+
+When working, you should see:
+> mominai-sandbox@0.1.0 dev
+> next dev -p 3001
+
+- ready started server on 0.0.0.0:3001, url: http://localhost:3001
+- event compiled client and server successfully
+
+Then visit: http://localhost:3001

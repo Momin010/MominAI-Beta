@@ -1,0 +1,44 @@
+{
+  "name": "mominai-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next dev",
+    "dev:custom": "node-v22.19.0-win-x64\\node.exe server.js",
+    "build": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next build",
+    "start": "NODE_ENV=production node-v22.19.0-win-x64\\node.exe server.js",
+    "lint": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next lint"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/auth-helpers-react": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "dockerode": "^4.0.2",
+    "dotenv": "^17.2.1",
+    "framer-motion": "^11.11.9",
+    "lucide-react": "^0.460.0",
+    "next": "14.2.15",
+    "next-themes": "^0.4.6",
+    "openai": "^5.17.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hot-toast": "^2.6.0",
+    "react-resizable-panels": "^3.0.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/ws": "^8.5.13",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
+    "next-pwa": "^5.6.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}
