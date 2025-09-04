@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next dev",
-    "dev:custom": "node-v22.19.0-win-x64\\node.exe server.js",
-    "build": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next build",
-    "start": "NODE_ENV=production node-v22.19.0-win-x64\\node.exe server.js",
-    "lint": "set PATH=%cd%\\node-v22.19.0-win-x64;%PATH% && next lint"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
