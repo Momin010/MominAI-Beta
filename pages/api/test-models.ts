@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { processPrompt } from '../../lib/openrouter';
+import { getConversationalResponse } from '../../src/IDE/services/aiService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,14 +14,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const startTime = Date.now();
-    const result = await processPrompt(prompt, model);
+    const result = await getConversationalResponse(prompt, 'ask', process.env.GOOGLE_AI_API_KEY || null);
     const endTime = Date.now();
 
     res.status(200).json({
       success: true,
-      response: result.response,
-      provider: 'OpenRouter',
-      model: result.model,
+      response: result,
+      provider: 'Google Gemini',
+      model: 'gemini-1.5-flash',
       responseTime: endTime - startTime,
     });
   } catch (error) {

@@ -10,12 +10,12 @@ const testCases = [
 
 async function testAPI(prompt) {
   try {
-    const response = await fetch('http://localhost:3000/api/openrouter', {
+    const response = await fetch('http://localhost:3000/api/test-models', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ model: 'gemini-1.5-flash', prompt }),
     });
 
     if (!response.ok) {

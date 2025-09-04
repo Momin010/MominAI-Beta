@@ -292,32 +292,42 @@ export class StreamingManager {
     this.startOperation(operationId, 'ai_request', 'Processing AI request...');
 
     try {
-      // Import the streaming function
-      const { processPromptStream } = await import('./openrouter');
+      // Use Gemini streaming for conversational responses
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+
+      const apiKey = process.env.GOOGLE_AI_API_KEY;
+      if (!apiKey) {
+        throw new Error('GOOGLE_AI_API_KEY not configured');
+      }
+
+      const ai = new GoogleGenerativeAI(apiKey);
+      const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      const result = await model.generateContentStream(prompt);
 
       let chunkCount = 0;
-      const fullResponse: string[] = [];
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        if (chunkText) {
+          chunkCount++;
 
-      for await (const chunk of processPromptStream(prompt)) {
-        chunkCount++;
-        fullResponse.push(chunk);
-
-        this.emitChunk(operationId, {
-          id: `ai_chunk_${chunkCount}`,
-          type: 'stdout',
-          data: chunk,
-          timestamp: new Date(),
-          metadata: { chunkNumber: chunkCount }
-        });
-
-        if (onChunk) {
-          onChunk({
+          this.emitChunk(operationId, {
             id: `ai_chunk_${chunkCount}`,
             type: 'stdout',
-            data: chunk,
+            data: chunkText,
             timestamp: new Date(),
             metadata: { chunkNumber: chunkCount }
           });
+
+          if (onChunk) {
+            onChunk({
+              id: `ai_chunk_${chunkCount}`,
+              type: 'stdout',
+              data: chunkText,
+              timestamp: new Date(),
+              metadata: { chunkNumber: chunkCount }
+            });
+          }
         }
       }
 
