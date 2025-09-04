@@ -797,17 +797,19 @@ Please provide an updated version of the component that addresses the user's req
 
           {showChat && (
             <div className="p-4 border-t border-white/10">
-              {/* Chat Messages */}
-              <div
-                ref={chatScrollRef}
-                className="h-64 overflow-y-auto mb-4 space-y-3 bg-black/20 rounded-lg p-3"
-              >
-                {chatMessages.length === 0 ? (
-                  <div className="text-center text-white/60 py-8">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>Start a conversation to refine your component</p>
-                    <p className="text-sm mt-1">Try: "Make the button bigger" or "Change the color to blue"</p>
-                  </div>
+             {/* Chat Messages */}
+<div
+  ref={chatScrollRef}
+  className="h-64 overflow-y-auto mb-4 space-y-3 bg-black/20 rounded-lg p-3"
+>
+  {chatMessages.length === 0 ? (
+    <div className="text-center text-white/60 py-8">
+      <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <p>Start a conversation to refine your component</p>
+      <p className="text-sm mt-1">
+        Try: &quot;Make the button bigger&quot; or &quot;Change the color to blue&quot;
+      </p>
+    </div>
                 ) : (
                   chatMessages.map((message) => (
                     <div
