@@ -310,19 +310,11 @@ Generate complete, professional React components with extensive Tailwind CSS sty
         }
     };
 
-    const messages = [
-        {
-            role: 'system',
-            content: getSystemPrompt(mode),
-        },
-        {
-            role: 'user',
-            content: prompt,
-        },
-    ];
+    const systemPrompt = getSystemPrompt(mode);
+    const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
 
     const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const response = await model.generateContent(prompt);
+    const response = await model.generateContent(fullPrompt);
 
     return response.response.text().trim();
 };

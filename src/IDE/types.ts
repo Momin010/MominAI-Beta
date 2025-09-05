@@ -89,3 +89,50 @@ export interface GistApiResponse {
   };
   truncated: boolean;
 }
+
+export interface Plugin {
+  id: string;
+  name: string;
+  description: string;
+  activate: (api: IDEApi) => void;
+  deactivate: (api: IDEApi) => void;
+}
+
+export interface StatusBarItem {
+  id: string;
+  component: any;
+  priority: number;
+}
+
+export interface Notification {
+  type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+}
+
+export interface Command {
+  id: string;
+  name?: string;
+  action: () => void | Promise<void>;
+}
+
+export interface IDEApi {
+  getOpenFileContent(): string | undefined;
+  getActiveFile(): string | undefined;
+  updateActiveFileContent(content: string): void;
+  readNode(path: string): string | undefined;
+  createNode(path: string, type: 'file' | 'directory', content?: string): void;
+  onActiveFileChanged(callback: () => void): () => void;
+  onFileSaved(callback: () => void): () => void;
+  addStatusBarItem(item: StatusBarItem): void;
+  removeStatusBarItem(id: string): void;
+  registerCommand(command: Command): void;
+  unregisterCommand(id: string): void;
+  showNotification(notification: Notification): void;
+  setDependencyReport(report: DependencyReport | null): void;
+  showInPreview(title: string, component: any): void;
+  scaffoldProject(files: Record<string, string>): void;
+  setAiDiagnostics(source: string, diagnostics: Diagnostic[]): void;
+  switchBottomPanelView(view: string): void;
+  removeEditorAction(id: string): void;
+  stopVoiceRecognition(): void;
+}
