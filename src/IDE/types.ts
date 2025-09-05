@@ -112,6 +112,8 @@ export interface Notification {
 export interface Command {
   id: string;
   name?: string;
+  label?: string;
+  category?: string;
   action: () => void | Promise<void>;
 }
 

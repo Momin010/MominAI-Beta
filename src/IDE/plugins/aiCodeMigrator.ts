@@ -1,6 +1,6 @@
 
 
-import type { Plugin, IDEApi } from '../types';
+import type { Plugin, IDEApi } from '../types.ts';
 import { migrateCode } from '../services/aiService';
 
 const handleMigration = async (api: IDEApi, from: string, to: string, supportedExtensions: string[]) => {
@@ -10,10 +10,14 @@ const handleMigration = async (api: IDEApi, from: string, to: string, supportedE
         return;
     }
     const content = api.getOpenFileContent();
+    if (!content) {
+        api.showNotification({ type: 'warning', message: 'No content found in the active file.' });
+        return;
+    }
     api.showNotification({ type: 'info', message: `Migrating from ${from} to ${to}...` });
     try {
         // FIX: Get API key from localStorage and pass it to the service function.
-        const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
+        const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null') || null;
         const newCode = await migrateCode(content, from, to, apiKey);
         api.updateActiveFileContent(newCode);
         api.showNotification({ type: 'success', message: 'Migration complete!' });
