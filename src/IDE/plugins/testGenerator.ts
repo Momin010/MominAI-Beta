@@ -24,14 +24,17 @@ export const testGeneratorPlugin: Plugin = {
                     return;
                 }
 
-                const content = api.getOpenFileContent();
+                const content = api.getOpenFileContent() ?? '';
                 api.showNotification({ type: 'info', message: `Generating tests for ${filePath.split('/').pop()}...` });
                 try {
                     const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
+                    if (typeof filePath !== 'string') {
+                        api.showNotification({ type: 'error', message: 'No active file to generate tests for.' });
+                        return;
+                    }
                     const testContent = await generateTestFile(content, filePath, apiKey);
                     const extension = filePath.substring(filePath.lastIndexOf('.'));
                     const testPath = filePath.replace(extension, `.test${extension}`);
-                    
                     api.createNode(testPath, 'file', testContent);
                     api.showNotification({ type: 'success', message: `Test file created at ${testPath}` });
 

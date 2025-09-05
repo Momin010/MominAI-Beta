@@ -17,7 +17,7 @@ const flattenFsForGist = (node: FileSystemNode, path = ''): Record<string, { con
         }
     } else {
         if (path) {
-            files[path] = { content: node.content };
+            files[path] = { content: node.content ?? '' };
         }
     }
     return files;
