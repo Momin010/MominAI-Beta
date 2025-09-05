@@ -30,8 +30,9 @@ export const codeToDocsPlugin: Plugin = {
                         api.showNotification({ type: 'error', message: 'No active file to generate docs for.' });
                         return;
                     }
-                    const docContent = await generateDocsForCode(content, filePath, apiKey);
-                    const docPath = filePath.substring(0, filePath.lastIndexOf('.')) + '.md';
+                    const filePathStr = filePath as string;
+                    const docContent = await generateDocsForCode(content, filePathStr, apiKey);
+                    const docPath = filePathStr.substring(0, filePathStr.lastIndexOf('.')) + '.md';
                     api.createNode(docPath, 'file', docContent);
                     api.showNotification({ type: 'success', message: `Documentation created at ${docPath}` });
                 } catch (error) {
