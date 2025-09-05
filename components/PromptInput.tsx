@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Send, Code, MessageSquare, Building } from 'lucide-react';
 import { EditorAgent, EditorCommand, executeEditorCommands } from '../lib/editor-agent';
 import { getConversationalResponse } from '../src/IDE/services/aiService';
+import { MominAIAgent } from '../lib/mominai-agent';
 
 interface Message {
   id: string;
@@ -215,6 +216,50 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     });
   };
 
+  // Execute MominAI Agent workflow
+  const executeMominAIWorkflow = async (userRequest: string) => {
+    const agent = new MominAIAgent('projects/car-dealership-workflow');
+
+    try {
+      setIsBackgroundProcessing(true);
+      setBackgroundProcessing?.(true);
+
+      // Add workflow start message
+      const startMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: "🚀 Starting MominAI Agent workflow for car dealership website...\n\n1. 📋 Analyzing user intent\n2. 🏗️ Generating project specification\n3. 📁 Creating project files\n4. ⚙️ Setting up development environment\n5. 🚀 Running development server\n6. 🌐 Auto-launching website",
+        created_at: new Date().toISOString(),
+      };
+      addMessage(startMessage);
+
+      // Execute the workflow
+      await agent.executeWorkflow(userRequest);
+
+      // Add completion message
+      const completionMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        type: 'ai',
+        content: "✅ MominAI Agent workflow completed successfully!\n\nYour car dealership website has been created and is now running. Check the new browser tab that should have opened automatically.",
+        created_at: new Date().toISOString(),
+      };
+      addMessage(completionMessage);
+
+    } catch (error) {
+      console.error('MominAI workflow failed:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        type: 'ai',
+        content: `❌ MominAI workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        created_at: new Date().toISOString(),
+      };
+      addMessage(errorMessage);
+    } finally {
+      setIsBackgroundProcessing(false);
+      setBackgroundProcessing?.(false);
+    }
+  };
+
   // Execute commands in background
   const executeCommandsInBackground = async (commands: EditorCommand[], taskCommands: TaskCommand[], projectCommands: ProjectCommand[]) => {
     setIsBackgroundProcessing(true);
@@ -297,6 +342,26 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     // Check if API keys are configured
     if (!checkApiKeysConfigured()) {
       setShowApiKeySetup(true);
+      return;
+    }
+
+    // Check if this is a MominAI Agent workflow request
+    const isMominAIWorkflow = promptText.toLowerCase().includes('mominai agent') ||
+                             promptText.toLowerCase().includes('complete workflow') ||
+                             (promptText.toLowerCase().includes('car dealership') && promptText.toLowerCase().includes('website'));
+
+    if (isMominAIWorkflow) {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: promptText,
+        user_id: userId,
+        created_at: new Date().toISOString(),
+      };
+      addMessage(userMessage);
+
+      // Execute MominAI Agent workflow
+      await executeMominAIWorkflow(promptText);
       return;
     }
 
