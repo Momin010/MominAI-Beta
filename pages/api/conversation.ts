@@ -1,31 +1,49 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getConversationalResponse } from '../../src/IDE/services/aiService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('Conversation API called - basic test');
+  console.log('Conversation API called with AI service');
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const { prompt, mode = 'ask' } = req.body;
-    console.log('Request body:', { prompt: prompt?.substring(0, 50), mode });
+  const { prompt, mode = 'ask' } = req.body;
 
-    // Simple test response first
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
+  try {
+    console.log('Processing request:', { prompt: prompt.substring(0, 100), mode });
+
+    // Check environment variables
+    console.log('Environment check:', {
+      hasOpenRouter: !!process.env.OPENROUTER_API_KEY,
+      hasGoogle: !!process.env.GOOGLE_AI_API_KEY,
+      openRouterLength: process.env.OPENROUTER_API_KEY?.length,
+      googleLength: process.env.GOOGLE_AI_API_KEY?.length
+    });
+
+    // The getConversationalResponse function will handle the OpenRouter -> Google fallback
+    const result = await getConversationalResponse(prompt, mode, null);
+
+    console.log('AI response generated successfully, length:', result.length);
+
     res.status(200).json({
       success: true,
-      response: `Test response: You said "${prompt?.substring(0, 50)}..." in ${mode} mode. API is working!`,
-      debug: {
-        hasOpenRouter: !!process.env.OPENROUTER_API_KEY,
-        hasGoogle: !!process.env.GOOGLE_AI_API_KEY,
-        timestamp: new Date().toISOString()
-      }
+      response: result,
     });
   } catch (error) {
-    console.error('Basic conversation API error:', error);
+    console.error('Conversation API error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
+
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }
