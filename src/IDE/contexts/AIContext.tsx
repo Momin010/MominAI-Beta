@@ -110,10 +110,10 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
                          if (action.text) await editorAgent.replaceText(editorInstance, action.text);
                         break;
                     case 'comment':
-                        if (action.text) setMessages(prev => [...prev, { sender: 'ai', text: action.text }]);
+                        if (action.text) setMessages(prev => [...prev, { sender: 'ai', text: action.text! }]);
                         break;
                     case 'finish':
-                        setMessages(prev => [...prev, { sender: 'ai', text: action.text || 'Task completed' }]);
+                        setMessages(prev => [...prev, { sender: 'ai', text: action.text ?? 'Task completed' }]);
                         setIsLoading(false);
                         return; // End of operation
                     default:
