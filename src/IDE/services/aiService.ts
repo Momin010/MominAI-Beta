@@ -55,10 +55,28 @@ const callGoogleAPI = async (prompt: string, apiKey: string): Promise<string> =>
 
 // Client-side API key management
 const getApiKeys = () => {
-  // These must be NEXT_PUBLIC_ to be accessible on client side
+  // First try localStorage (user-provided keys)
+  if (typeof window !== 'undefined') {
+    const savedKeys = localStorage.getItem('ai-api-keys');
+    if (savedKeys) {
+      try {
+        const keys = JSON.parse(savedKeys);
+        if (keys.openRouter || keys.google) {
+          return {
+            openRouter: keys.openRouter || '',
+            google: keys.google || ''
+          };
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved API keys:', e);
+      }
+    }
+  }
+
+  // Fallback to environment variables (for development/demo)
   return {
-    openRouter: process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || 'your-openrouter-key-here',
-    google: process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || 'your-google-key-here'
+    openRouter: process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '',
+    google: process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || ''
   };
 };
 

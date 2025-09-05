@@ -50,6 +50,9 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [waitingForPermission, setWaitingForPermission] = useState(false);
   const [isBackgroundProcessing, setIsBackgroundProcessing] = useState(false);
+  const [showApiKeySetup, setShowApiKeySetup] = useState(false);
+  const [openRouterKey, setOpenRouterKey] = useState('');
+  const [googleKey, setGoogleKey] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modeSelectorRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,35 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
 
   // Use a generic user ID for non-authenticated usage
   const userId = 'anonymous-user';
+
+  // Check if API keys are configured
+  const checkApiKeysConfigured = () => {
+    const savedKeys = localStorage.getItem('ai-api-keys');
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys);
+      return !!(keys.openRouter || keys.google);
+    }
+    return false;
+  };
+
+  // Save API keys to localStorage
+  const saveApiKeys = () => {
+    const keys = {
+      openRouter: openRouterKey.trim(),
+      google: googleKey.trim()
+    };
+    localStorage.setItem('ai-api-keys', JSON.stringify(keys));
+    setShowApiKeySetup(false);
+
+    // Add welcome message
+    const welcomeMessage: Message = {
+      id: Date.now().toString(),
+      type: 'ai',
+      content: "Great! Your API keys are configured. You can now start chatting with the AI assistant. Try asking me to help you with coding tasks!",
+      created_at: new Date().toISOString(),
+    };
+    addMessage(welcomeMessage);
+  };
 
   const modeConfig = {
     ask: {
@@ -249,6 +281,12 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
   };
 
   const submitPrompt = async (promptText: string) => {
+    // Check if API keys are configured
+    if (!checkApiKeysConfigured()) {
+      setShowApiKeySetup(true);
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -405,6 +443,69 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
           )}
         </div>
       )}
+
+      {showApiKeySetup && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg"
+        >
+          <h3 className="text-white font-semibold mb-3">🚀 Setup Your AI Assistant</h3>
+          <p className="text-white/80 text-sm mb-4">
+            To start chatting with the AI, please provide your API keys. You can get them from:
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-white/90 text-sm font-medium mb-1">
+                OpenRouter API Key (Recommended)
+              </label>
+              <input
+                type="password"
+                value={openRouterKey}
+                onChange={(e) => setOpenRouterKey(e.target.value)}
+                placeholder="sk-or-v1-..."
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-white/60 text-xs mt-1">
+                Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">openrouter.ai</a>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-white/90 text-sm font-medium mb-1">
+                Google AI API Key (Fallback)
+              </label>
+              <input
+                type="password"
+                value={googleKey}
+                onChange={(e) => setGoogleKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-white/60 text-xs mt-1">
+                Get your key at <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Google AI Studio</a>
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={saveApiKeys}
+                disabled={!openRouterKey.trim() && !googleKey.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded transition-colors"
+              >
+                Save & Start Chatting
+              </button>
+              <button
+                onClick={() => setShowApiKeySetup(false)}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
       <div className="flex items-end space-x-2">
         {/* Mode Selector */}
         <div ref={modeSelectorRef} className="relative">
@@ -453,8 +554,9 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
             placeholder="Enter your prompt..."
             className="w-full resize-none rounded-lg border border-white/20 bg-white/10 backdrop-blur-xl px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
             rows={1}
+            disabled={showApiKeySetup}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !showApiKeySetup) {
                 e.preventDefault();
                 handleSubmit();
               }
@@ -463,7 +565,7 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
         </div>
         <button
           onClick={handleSubmit}
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || isLoading || showApiKeySetup}
           className="px-4 py-2 backdrop-blur-xl bg-white/20 hover:bg-white/30 disabled:bg-white/10 text-white rounded-lg transition-colors flex items-center space-x-2 border border-white/20"
         >
           {isLoading ? (
