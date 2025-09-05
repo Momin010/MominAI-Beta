@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Send, Code, MessageSquare, Building } from 'lucide-react';
 import { EditorAgent, EditorCommand, executeEditorCommands } from '../lib/editor-agent';
+import { getConversationalResponse } from '../src/IDE/services/aiService';
 
 interface Message {
   id: string;
@@ -258,32 +259,9 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     addMessage(userMessage);
 
     try {
-      // Call AI through Edge API route for better performance
-      const response = await fetch('/api/conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add cache control for better performance
-          'Cache-Control': 'no-cache',
-        },
-        body: JSON.stringify({
-          prompt: promptText,
-          mode: currentMode,
-        }),
-        // Add timeout for better UX
-        signal: AbortSignal.timeout(30000), // 30 second timeout
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'API request failed');
-      }
-
-      const result = data.response;
+      // Call AI service directly (client-side)
+      console.log('Calling AI service directly...');
+      const result = await getConversationalResponse(promptText, currentMode);
 
       // Parse response to extract JSON commands and conversational text
       const { conversationalText, commands, taskCommands, projectCommands } = parseResponse(result);

@@ -73,7 +73,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
         setMessages(prev => [...prev, userMessage]);
 
         try {
-            const actionStream = streamAIActions(prompt, allFiles, geminiApiKey);
+            const actionStream = streamAIActions(prompt, allFiles);
 
             for await (const action of actionStream) {
                 switch (action.action) {
