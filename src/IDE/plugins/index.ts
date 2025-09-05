@@ -21,7 +21,6 @@ import { aiProjectScaffolderPlugin } from './aiProjectScaffolder';
 import { dependencyCheckerPlugin } from './dependencyChecker';
 import { zenModePlugin } from './zenMode';
 import { figmaImporterPlugin } from './figmaImporter';
-import { aiCodeReviewPlugin } from './aiCodeReview';
 import { liveDeployPlugin } from './liveDeploy';
 
 export const allPlugins: Plugin[] = [
@@ -47,6 +46,5 @@ export const allPlugins: Plugin[] = [
     dependencyCheckerPlugin,
     zenModePlugin,
     figmaImporterPlugin,
-    aiCodeReviewPlugin,
     liveDeployPlugin,
 ];

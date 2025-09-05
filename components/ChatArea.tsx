@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { ChevronDown } from 'lucide-react';
@@ -42,7 +42,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomId, messages, loading = false, 
   };
 
   // Handle scroll events
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (chatContainerRef.current) {
       const container = chatContainerRef.current;
       const { scrollTop, scrollHeight, clientHeight } = container;
@@ -59,7 +59,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomId, messages, loading = false, 
         setUserScrolledUp(false);
       }
     }
-  };
+  }, [userScrolledUp]);
 
   // Auto-scroll on new messages (only if user hasn't scrolled up)
   useEffect(() => {
