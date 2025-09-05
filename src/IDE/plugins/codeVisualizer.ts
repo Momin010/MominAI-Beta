@@ -3,7 +3,6 @@
 import React from 'react';
 import type { Plugin, IDEApi } from '../types';
 import { generateMermaidDiagram } from '../services/aiService';
-import MermaidPreview from '../components/MermaidPreview';
 
 const EDITOR_ACTION_ID = 'code-visualizer';
 
@@ -21,7 +20,7 @@ export const codeVisualizerPlugin: Plugin = {
                 const filePath = api.getActiveFile();
                 const content = api.getOpenFileContent();
                 const supportedExtensions = ['.js', '.jsx', '.ts', '.tsx'];
-                if (!filePath || content.trim().length === 0 || !supportedExtensions.some(ext => filePath.endsWith(ext))) {
+                if (!filePath || !content || content.trim().length === 0 || !supportedExtensions.some(ext => filePath.endsWith(ext))) {
                     api.showNotification({type: 'warning', message: 'Can only visualize non-empty JS/TS files.'});
                     return;
                 }
@@ -30,8 +29,7 @@ export const codeVisualizerPlugin: Plugin = {
                  try {
                     const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
                     const mermaidCode = await generateMermaidDiagram(content, apiKey);
-                    const previewComponent = React.createElement(MermaidPreview, { chart: mermaidCode });
-                    api.showInPreview(`Visualization: ${filePath.split('/').pop()}`, previewComponent);
+                    api.showInPreview(`Visualization: ${filePath.split('/').pop()}`, mermaidCode);
                 } catch (error) {
                     const message = error instanceof Error ? error.message : "Failed to generate diagram.";
                     api.showNotification({ type: 'error', message });
