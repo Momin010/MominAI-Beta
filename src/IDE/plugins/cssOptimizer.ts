@@ -27,6 +27,10 @@ export const cssOptimizerPlugin: Plugin = {
                 api.showNotification({ type: 'info', message: 'Optimizing CSS...' });
                 try {
                     const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
+                    if (typeof content !== 'string') {
+                        api.showNotification({ type: 'error', message: 'No CSS content to optimize.' });
+                        return;
+                    }
                     const optimizedContent = await optimizeCss(content, apiKey);
                     api.updateActiveFileContent(optimizedContent);
                     api.showNotification({ type: 'success', message: 'CSS optimized successfully.' });
