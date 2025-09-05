@@ -7,6 +7,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const { createWebSocketServer } = require('./lib/websocket-server.js');
+const { initializeSocketServer } = require('./lib/socket-server.js');
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
@@ -14,8 +15,11 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  // Initialize WebSocket server
+  // Initialize WebSocket server for backend execution
   createWebSocketServer(server);
+
+  // Initialize Socket.IO server for real-time collaboration
+  initializeSocketServer(server);
 
   const port = process.env.PORT || 3000;
 
@@ -23,5 +27,6 @@ app.prepare().then(() => {
     if (err) throw err;
     console.log(`> Ready on http://localhost:${port}`);
     console.log(`> WebSocket server ready for real-time log streaming`);
+    console.log(`> Socket.IO server ready for real-time collaboration`);
   });
 });

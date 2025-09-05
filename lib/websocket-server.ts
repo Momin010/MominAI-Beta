@@ -1,6 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { createClient } from '@supabase/supabase-js';
+import { CollaborationServer } from './collaboration-server';
+import { Server as SocketIOServer } from 'socket.io';
 
 // Initialize Supabase client
 const supabase = createClient(

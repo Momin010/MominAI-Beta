@@ -26,6 +26,8 @@
     "react-dom": "^18",
     "react-hot-toast": "^2.6.0",
     "react-resizable-panels": "^3.0.5",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "ws": "^8.18.0"
   },
   "devDependencies": {
