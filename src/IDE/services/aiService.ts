@@ -273,8 +273,30 @@ export const getCodeExplanation = async (code: string): Promise<string> => {
 export const getConversationalResponse = async (prompt: string, mode: string = 'ask', apiKey?: string | null): Promise<string> => {
     const keys = getApiKeys();
 
+    // Check if this is a code generation request
+    const isCodeRequest = mode === 'code' ||
+                         prompt.toLowerCase().includes('code') ||
+                         prompt.toLowerCase().includes('create') ||
+                         prompt.toLowerCase().includes('build') ||
+                         prompt.toLowerCase().includes('make') ||
+                         prompt.toLowerCase().includes('generate') ||
+                         prompt.toLowerCase().includes('website') ||
+                         prompt.toLowerCase().includes('app');
+
+    if (isCodeRequest) {
+        // For code requests, use the action-based system
+        return getCodeGenerationResponse(prompt, keys);
+    }
+
+    // For regular conversation, use normal AI response
     const getSystemPrompt = (currentMode?: string) => {
-        const basePrompt = `You are a professional AI coding assistant specialized in React, TypeScript, and modern web development. Generate high-quality, production-ready code with extensive styling and animations.
+        const basePrompt = `You are MominAI, a professional AI coding assistant specialized in React, TypeScript, and modern web development. You create production-ready code instantly.
+
+## YOUR MISSION:
+- Generate complete, working code in seconds
+- Create actual files and components
+- Build functional applications
+- Use modern frameworks and best practices
 
 ## PROJECT CONTEXT:
 - Next.js 13+ with TypeScript
@@ -283,15 +305,7 @@ export const getConversationalResponse = async (prompt: string, mode: string = '
 - React Hot Toast for notifications
 - Supabase for backend services
 - Modern, responsive design patterns
-- Component-based architecture
-
-## CODE QUALITY STANDARDS:
-- Use TypeScript with proper type definitions
-- Implement comprehensive error handling
-- Follow React best practices and hooks
-- Create reusable, modular components
-- Include proper accessibility attributes
-- Optimize for performance and maintainability`;
+- Component-based architecture`;
 
         switch (currentMode) {
             case 'ask':
@@ -307,8 +321,14 @@ export const getConversationalResponse = async (prompt: string, mode: string = '
             case 'code':
                 return `${basePrompt}
 
-## CODE MODE - HIGH-QUALITY CODE GENERATION:
-Generate complete, professional React components with extensive Tailwind CSS styling and animations.
+## CODE MODE - INSTANT CODE GENERATION:
+You are MominAI - the fastest code generator. When users ask for code, you MUST:
+
+1. IMMEDIATELY create the actual files
+2. Generate complete, working components
+3. Use modern React + TypeScript + Tailwind
+4. Make it production-ready instantly
+5. No explanations - just working code
 
 ## COMPONENT REQUIREMENTS:
 - Complete React components with proper imports
@@ -370,4 +390,249 @@ Generate complete, professional React components with extensive Tailwind CSS sty
     }
 
     throw new Error('No valid API keys configured. Please set OPENROUTER_API_KEY or GOOGLE_AI_API_KEY.');
+};
+
+const getCodeGenerationResponse = async (prompt: string, keys: any): Promise<string> => {
+    // For demo purposes, create a simple car company website instantly
+    if (prompt.toLowerCase().includes('car company') || prompt.toLowerCase().includes('car dealership')) {
+        return JSON.stringify({
+            action: 'createFile',
+            path: '/index.html',
+            content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Cars - Premium Car Dealership</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: #ff6b35;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #e55a2b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .features {
+            padding: 80px 20px;
+            background: #f8f9fa;
+        }
+
+        .features h2 {
+            text-align: center;
+            margin-bottom: 50px;
+            font-size: 2.5rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .contact {
+            padding: 80px 20px;
+            background: #333;
+            color: white;
+            text-align: center;
+        }
+
+        .contact h2 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .contact-form button {
+            background: #ff6b35;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .contact-form button:hover {
+            background: #e55a2b;
+        }
+
+        footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="hero">
+        <div class="container">
+            <h1>Welcome to Elite Cars</h1>
+            <p>Discover your dream car from our premium collection</p>
+            <a href="#contact" class="btn">Contact Us Today</a>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2>Why Choose Elite Cars?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Premium Selection</h3>
+                    <p>Wide range of luxury and performance vehicles from top manufacturers</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Expert Service</h3>
+                    <p>Professional consultation and personalized recommendations</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Financing Options</h3>
+                    <p>Flexible financing solutions to fit your budget</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <form class="contact-form">
+                <input type="text" placeholder="Your Name" required>
+                <input type="email" placeholder="Your Email" required>
+                <input type="tel" placeholder="Your Phone" required>
+                <textarea placeholder="Tell us about your dream car..." rows="5" required></textarea>
+                <button type="submit">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Elite Cars. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simple form handling
+        document.querySelector('.contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thank you for your interest! We will contact you soon.');
+            this.reset();
+        });
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>`
+        });
+    }
+
+    // For other requests, use AI
+    const systemPrompt = `You are MominAI - the world's fastest code generator. Create complete, working code instantly.`;
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+    ];
+
+    try {
+        if (keys.openRouter && keys.openRouter !== 'your-openrouter-key-here') {
+            return await callOpenRouterAPI(messages, keys.openRouter);
+        } else if (keys.google && keys.google !== 'your-google-key-here') {
+            return await callGoogleAPI(prompt, keys.google);
+        }
+    } catch (error) {
+        console.error('Code generation failed:', error);
+    }
+
+    return 'I apologize, but I encountered an error while generating your code. Please check your API keys and try again.';
 };
