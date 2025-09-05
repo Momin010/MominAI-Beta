@@ -76,7 +76,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomId, messages, loading = false, 
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, []);
+  }, [handleScroll]);
 
   // Polling fallback for realtime (since Supabase replication is not available yet)
   useEffect(() => {
@@ -122,7 +122,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ roomId, messages, loading = false, 
     const interval = setInterval(pollForMessages, 2000);
 
     return () => clearInterval(interval);
-  }, [roomId, messages.length, onNewMessage]);
+  }, [roomId, messages, onNewMessage]);
 
   const copyToClipboard = async (text: string) => {
     try {

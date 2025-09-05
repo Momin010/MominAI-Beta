@@ -58,6 +58,8 @@ export interface AdaptationStrategy {
   successRate: number;
 }
 
+export type History = ReasoningStep[];
+
 export class AdvancedReasoningEngine {
   private static instance: AdvancedReasoningEngine;
   private activePlans: Map<string, WorkflowPlan> = new Map();
@@ -671,7 +673,7 @@ Provide analysis in JSON format:
           id: 'error_recovery',
           type: 'execution',
           description: 'Recover from execution error',
-          input: { error: history.find((step: ReasoningStep) => step.metadata.error)?.metadata.error },
+          input: { error: (history as unknown as ReasoningStep[]).find((step: ReasoningStep) => step.metadata.error)?.metadata.error },
           confidence: 0.75,
           timestamp: new Date(),
           dependencies: ['execute'],
