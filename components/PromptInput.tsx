@@ -258,16 +258,20 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     addMessage(userMessage);
 
     try {
-      // Call AI through API route
+      // Call AI through Edge API route for better performance
       const response = await fetch('/api/conversation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add cache control for better performance
+          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify({
           prompt: promptText,
           mode: currentMode,
         }),
+        // Add timeout for better UX
+        signal: AbortSignal.timeout(30000), // 30 second timeout
       });
 
       if (!response.ok) {
@@ -333,11 +337,14 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
       if (err instanceof Error) {
         const message = err.message.toLowerCase();
 
-        if (message.includes('api key') || message.includes('authorization') || message.includes('invalid')) {
+        if (message.includes('aborted') || message.includes('timeout')) {
+          errorMessage = 'Request timed out. The AI service took too long to respond.';
+          errorType = 'timeout';
+        } else if (message.includes('api key') || message.includes('authorization') || message.includes('invalid')) {
           errorMessage = 'AI service configuration error. Please check your API keys in Vercel environment variables.';
           errorType = 'auth';
           shouldAllowRetry = false;
-        } else if (message.includes('network') || message.includes('fetch')) {
+        } else if (message.includes('network') || message.includes('fetch') || message.includes('failed to fetch')) {
           errorMessage = 'Network error. Please check your internet connection and try again.';
           errorType = 'network';
         } else if (message.includes('rate limit') || message.includes('429')) {
@@ -347,9 +354,6 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
           errorMessage = 'The requested AI model is not available. Please try again.';
           errorType = 'model';
           shouldAllowRetry = false;
-        } else if (message.includes('timeout')) {
-          errorMessage = 'Request timed out. Please try again.';
-          errorType = 'timeout';
         } else {
           errorMessage = err.message;
           errorType = 'api_error';

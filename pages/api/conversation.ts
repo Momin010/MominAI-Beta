@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 // import { getConversationalResponse } from '../../src/IDE/services/aiService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
