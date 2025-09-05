@@ -1,8 +1,6 @@
 
 import React from 'react';
 import type { Plugin, IDEApi } from '../types';
-import { Icons } from '../components/Icon';
-import MarkdownPreview from '../components/MarkdownPreview';
 
 const EDITOR_ACTION_ID = 'markdown-preview';
 
