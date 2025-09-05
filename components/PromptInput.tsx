@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Send, Code, MessageSquare, Building } from 'lucide-react';
 import { EditorAgent, EditorCommand, executeEditorCommands } from '../lib/editor-agent';
-import { getConversationalResponse } from '../src/IDE/services/aiService';
 
 interface Message {
   id: string;
@@ -259,9 +258,28 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
     addMessage(userMessage);
 
     try {
-      // Call AI through Gemini service
-      const apiKey = process.env.GEMINI_API_KEY || null;
-      const result = await getConversationalResponse(promptText, currentMode, apiKey);
+      // Call AI through API route
+      const response = await fetch('/api/conversation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: promptText,
+          mode: currentMode,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'API request failed');
+      }
+
+      const result = data.response;
 
       // Parse response to extract JSON commands and conversational text
       const { conversationalText, commands, taskCommands, projectCommands } = parseResponse(result);
@@ -299,14 +317,14 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
       addMessage(aiMessage);
 
       try {
-        toast.success('Gemini response received successfully!');
+        toast.success('AI response received successfully!');
       } catch (toastError) {
-        console.log('Success: Gemini response received successfully!');
+        console.log('Success: AI response received successfully!');
       }
       setLastError(null);
       setCanRetry(false);
     } catch (err) {
-      console.error('Gemini API Error:', err);
+      console.error('AI API Error:', err);
 
       let errorMessage = 'An unexpected error occurred';
       let errorType = 'unknown';
@@ -316,7 +334,7 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
         const message = err.message.toLowerCase();
 
         if (message.includes('api key') || message.includes('authorization') || message.includes('invalid')) {
-          errorMessage = 'API key is invalid or missing. Please check your Gemini API key configuration.';
+          errorMessage = 'AI service configuration error. Please check your API keys in Vercel environment variables.';
           errorType = 'auth';
           shouldAllowRetry = false;
         } else if (message.includes('network') || message.includes('fetch')) {
@@ -326,7 +344,7 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
           errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
           errorType = 'rate_limit';
         } else if (message.includes('model') && message.includes('not found')) {
-          errorMessage = 'The requested model is not available. Please try a different model.';
+          errorMessage = 'The requested AI model is not available. Please try again.';
           errorType = 'model';
           shouldAllowRetry = false;
         } else if (message.includes('timeout')) {
