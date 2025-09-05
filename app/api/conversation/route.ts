@@ -7,6 +7,11 @@ export async function POST(request: NextRequest) {
     const { prompt, mode = 'ask', stream = false } = await request.json();
 
     console.log('Edge API called:', { prompt: prompt?.substring(0, 50), mode, stream });
+    console.log('Environment check:', {
+      hasOpenRouter: !!process.env.OPENROUTER_API_KEY,
+      hasGoogle: !!process.env.GOOGLE_AI_API_KEY,
+      nodeEnv: process.env.NODE_ENV
+    });
 
     if (!prompt) {
       return NextResponse.json(
