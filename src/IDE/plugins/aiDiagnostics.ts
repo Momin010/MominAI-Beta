@@ -1,5 +1,5 @@
 
-import type { Plugin, IDEApi, Diagnostic } from '../types';
+import type { Plugin, IDEApi, Diagnostic } from '../types.ts';
 import { analyzeCodeForBugs } from '../services/aiService';
 
 const AI_LINTER_SOURCE = 'AI Linter';
@@ -13,7 +13,7 @@ const runAnalysis = (api: IDEApi) => {
     }
     const content = api.getOpenFileContent();
 
-    if (content.trim().length < 20) { // Don't analyze very small files
+    if (!content || content.trim().length < 20) { // Don't analyze very small files
         api.setAiDiagnostics(AI_LINTER_SOURCE, []);
         return;
     }
@@ -25,7 +25,7 @@ const runAnalysis = (api: IDEApi) => {
     analysisTimeout = window.setTimeout(async () => {
         try {
             // FIX: Get API key from localStorage and pass it to the service function.
-            const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
+            const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null') || null;
             const results = await analyzeCodeForBugs(content, apiKey);
             const diagnostics: Diagnostic[] = results.map(r => ({ ...r, source: AI_LINTER_SOURCE }));
             api.setAiDiagnostics(AI_LINTER_SOURCE, diagnostics);
