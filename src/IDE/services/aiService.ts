@@ -393,7 +393,97 @@ You are MominAI - the fastest code generator. When users ask for code, you MUST:
 };
 
 const getCodeGenerationResponse = async (prompt: string, keys: any): Promise<string> => {
-    // For demo purposes, create a simple car company website instantly
+    // Enhanced AI agent workflow for React/Vite projects
+    if (prompt.toLowerCase().includes('website') || prompt.toLowerCase().includes('app') ||
+        prompt.toLowerCase().includes('build') || prompt.toLowerCase().includes('create')) {
+
+        // Step 1: Clarify the user's request with AI
+        const clarificationPrompt = `Analyze this user request and provide a structured breakdown for a React/Vite project:
+
+User Request: "${prompt}"
+
+Return a JSON object with:
+{
+  "projectType": "website|app|landing-page|ecommerce|blog|portfolio",
+  "components": ["Navbar", "Hero", "About", "Services", "Contact", "Footer"],
+  "features": ["responsive", "animations", "forms", "navigation"],
+  "techStack": ["react", "vite", "tailwind", "framer-motion"],
+  "description": "brief project description"
+}`;
+
+        let clarification;
+        try {
+            if (keys.openRouter) {
+                const messages = [{ role: 'user', content: clarificationPrompt }];
+                clarification = await callOpenRouterAPI(messages, keys.openRouter);
+            } else if (keys.google) {
+                clarification = await callGoogleAPI(clarificationPrompt, keys.google);
+            }
+        } catch (error) {
+            console.warn('Clarification failed, using defaults');
+        }
+
+        // Step 2: Generate comprehensive React code for multiple files
+        const codeGenerationPrompt = `You are MominAI - an autonomous AI agent that creates complete React/Vite applications.
+
+User wants: "${prompt}"
+
+Create a modern React application with:
+- Navbar with navigation
+- Hero section with call-to-action
+- Main content sections
+- Contact form
+- Footer
+- Responsive design with Tailwind CSS
+- Framer Motion animations
+
+Return a JSON object with file paths and their complete code:
+{
+  "files": {
+    "src/App.tsx": "complete App component code",
+    "src/components/Navbar.tsx": "complete Navbar component",
+    "src/components/Hero.tsx": "complete Hero component",
+    "src/components/Contact.tsx": "complete Contact component",
+    "src/index.css": "Tailwind imports and global styles",
+    "package.json": "complete package.json with dependencies"
+  },
+  "summary": "Brief summary of what was created"
+}`;
+
+        let codeResponse;
+        try {
+            if (keys.openRouter) {
+                const messages = [{ role: 'user', content: codeGenerationPrompt }];
+                codeResponse = await callOpenRouterAPI(messages, keys.openRouter);
+            } else if (keys.google) {
+                codeResponse = await callGoogleAPI(codeGenerationPrompt, keys.google);
+            }
+        } catch (error) {
+            console.error('Code generation failed:', error);
+            return 'Failed to generate code. Please check your API keys.';
+        }
+
+        // Parse the AI response and create actual files
+        if (codeResponse) {
+            try {
+                const parsedResponse = JSON.parse(codeResponse);
+                if (parsedResponse.files) {
+                    // Return structured response for the IDE to process
+                    return JSON.stringify({
+                        action: 'createProject',
+                        projectType: 'react-vite',
+                        files: parsedResponse.files,
+                        summary: parsedResponse.summary || 'Project created successfully',
+                        runCommands: ['npm install', 'npm run dev']
+                    });
+                }
+            } catch (parseError) {
+                console.warn('Failed to parse AI response as JSON, falling back to HTML');
+            }
+        }
+    }
+
+    // Fallback for simple requests - create HTML
     if (prompt.toLowerCase().includes('car company') || prompt.toLowerCase().includes('car dealership')) {
         return JSON.stringify({
             action: 'createFile',

@@ -44,81 +44,42 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
     const [isLoading, setIsLoading] = useState(false);
 
     const sendMessage = useCallback(async (prompt: string) => {
-        if (isLoading || !fs || !editorInstance) {
-            toast.error('AI Agent is not ready. Please wait.');
-            return;
-        }
-        if (!geminiApiKey) {
-            toast.error('Please set your Gemini API key in the settings to use AI features.');
-            setActiveTab('settings');
+        if (isLoading) {
+            toast.error('AI Agent is busy. Please wait.');
             return;
         }
         setIsLoading(true);
 
-        const getAllFiles = (node: FileSystemNode | null, currentPath: string): {path: string, content: string}[] => {
-            if (!node) return [];
-            const files: {path: string, content: string}[] = [];
-            if (node.type === 'file' && node.content) {
-                files.push({ path: currentPath, content: node.content });
-            } else if (node.type === 'directory' && node.children) {
-                Object.entries(node.children).forEach(([name, child]) => {
-                    files.push(...getAllFiles(child, currentPath + '/' + name));
-                });
-            }
-            return files;
-        };
-
-        const allFiles = getAllFiles(fs, '/');
         const userMessage: Message = { sender: 'user', text: prompt };
         setMessages(prev => [...prev, userMessage]);
 
         try {
-            const actionStream = streamAIActions(prompt, allFiles);
+            // Call the updated conversation API that handles agent execution
+            const response = await fetch('/api/conversation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt,
+                    mode: 'code', // Force code mode for agent execution
+                    projectId: 'current-project' // This should come from context
+                }),
+            });
 
-            for await (const action of actionStream) {
-                switch (action.action) {
-                    case 'openFile':
-                        if (action.path) setActiveTab(action.path);
-                        // Brief pause to allow editor to switch models
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        break;
-                    case 'createFile':
-                        if (action.path) {
-                            await createNode(action.path, 'file', action.content);
-                            setActiveTab(action.path);
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        break;
-                    case 'type':
-                        if (action.text) await editorAgent.typeText(editorInstance, action.text);
-                        break;
-                    case 'moveCursor':
-                        if (action.line !== undefined && action.column !== undefined) {
-                            await editorAgent.moveCursor(editorInstance, action.line, action.column);
-                        }
-                        break;
-                    case 'delete':
-                        if (action.lines !== undefined) await editorAgent.deleteText(editorInstance, action.lines);
-                        break;
-                    case 'select':
-                        if (action.startLine !== undefined && action.startColumn !== undefined &&
-                            action.endLine !== undefined && action.endColumn !== undefined) {
-                            await editorAgent.selectText(editorInstance, action.startLine, action.startColumn, action.endLine, action.endColumn);
-                        }
-                        break;
-                    case 'replace':
-                         if (action.text) await editorAgent.replaceText(editorInstance, action.text);
-                        break;
-                    case 'comment':
-                        if (action.text) setMessages(prev => [...prev, { sender: 'ai', text: action.text! }]);
-                        break;
-                    case 'finish':
-                        setMessages(prev => [...prev, { sender: 'ai', text: action.text ?? 'Task completed' }]);
-                        setIsLoading(false);
-                        return; // End of operation
-                    default:
-                        console.warn('Unknown AI action:', action);
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.type === 'agent' && data.actions) {
+                    // Execute agent actions
+                    await executeAgentActions(data.actions);
+                    setMessages(prev => [...prev, { sender: 'ai', text: data.response }]);
+                } else {
+                    // Regular conversation response
+                    setMessages(prev => [...prev, { sender: 'ai', text: data.response }]);
                 }
+            } else {
+                throw new Error(data.error || 'AI request failed');
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unknown error occurred with the AI agent.";
@@ -128,7 +89,57 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
             setIsLoading(false);
         }
 
-    }, [isLoading, fs, geminiApiKey, editorInstance, createNode, setActiveTab]);
+    }, [isLoading]);
+
+    // Execute agent actions
+    const executeAgentActions = useCallback(async (actions: any[]) => {
+        console.log('🤖 Executing agent actions:', actions);
+
+        for (const action of actions) {
+            try {
+                switch (action.action) {
+                    case 'createFile':
+                        if (action.path && action.content) {
+                            console.log(`📄 Creating file: ${action.path}`);
+                            await createNode(action.path, 'file', action.content);
+                            setActiveTab(action.path);
+                            toast.success(`Created ${action.path}`);
+                        }
+                        break;
+
+                    case 'runCommands':
+                        if (action.commands && action.cwd) {
+                            console.log(`🚀 Running commands in ${action.cwd}:`, action.commands);
+                            for (const cmd of action.commands) {
+                                toast.success(`Running: ${cmd}`);
+                                // Note: Command execution would need to be handled server-side
+                                // For now, we'll just show the commands that should be run
+                            }
+                        }
+                        break;
+
+                    case 'createProject':
+                        if (action.files) {
+                            console.log(`📁 Creating project with ${Object.keys(action.files).length} files`);
+                            for (const [filePath, content] of Object.entries(action.files)) {
+                                await createNode(filePath, 'file', content as string);
+                            }
+                            toast.success(`Created project with ${Object.keys(action.files).length} files`);
+                        }
+                        break;
+
+                    default:
+                        console.warn('Unknown agent action:', action);
+                }
+
+                // Small delay between actions
+                await new Promise(resolve => setTimeout(resolve, 200));
+            } catch (error) {
+                console.error('Action execution failed:', error);
+                toast.error(`Failed to execute action: ${action.action}`);
+            }
+        }
+    }, [createNode, setActiveTab]);
 
     const performEditorAction = useCallback(async (action: EditorAIAction, code: string, filePath: string) => {
         // This function can now be simplified or routed through the main agent
