@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const openRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
     const googleKey = process.env.GOOGLE_AI_API_KEY;
 
     console.log('API Keys available:', {

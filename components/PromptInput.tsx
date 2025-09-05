@@ -389,72 +389,76 @@ const PromptInput: React.FC<PromptInputProps> = ({ addMessage, setIsSubmitting, 
         // Switch to code mode for file creation
         onModeChange('code');
 
-        // Use the streaming action system for code generation
-        console.log('Using streaming actions for code generation...');
+        // Use the new AI Agent system for code generation
+        console.log('🤖 Using AI Agent system for code generation...');
 
-        // Import the streaming function dynamically
-        const { streamAIActions } = await import('../src/IDE/services/aiService');
-
-        // Get all files in the workspace
-        const allFiles = getAllWorkspaceFiles();
-
-        // Get the AI response (which may contain JSON actions)
-        const aiResponse = await getConversationalResponse(promptText, currentMode);
-        console.log('AI Response:', aiResponse);
-
-        // Try to parse as JSON action first
         try {
-          const action = JSON.parse(aiResponse);
-          if (action.action === 'createFile' && action.path && action.content) {
-            // Handle createFile action
-            try {
-              // For demo purposes, we'll create the file in the browser's local storage
-              // In a real IDE, this would create the actual file
-              localStorage.setItem(`workspace_file_${action.path}`, action.content);
+          // Call the new agent API
+          const response = await fetch('/api/conversation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: promptText,
+              mode: 'code',
+              projectId: 'current-project'
+            }),
+          });
 
+          const data = await response.json();
+
+          if (data.success) {
+            if (data.type === 'agent' && data.actions) {
+              // Execute agent actions
+              console.log('Executing agent actions:', data.actions);
+
+              // Show initial response
               const aiMessage: Message = {
                 id: (Date.now() + Math.random()).toString(),
                 type: 'ai',
-                content: `🎉 Created ${action.path} - Complete car dealership website with modern design, responsive layout, and contact form!`,
+                content: data.response,
                 created_at: new Date().toISOString(),
               };
               addMessage(aiMessage);
 
-              // Show the created content
-              const contentMessage: Message = {
-                id: (Date.now() + Math.random()).toString(),
-                type: 'ai',
-                content: `**File created successfully!**\n\nHere's your complete car dealership website:\n\n${action.content.substring(0, 500)}...\n\n*Full professional website created in seconds!* 🚗✨`,
-                created_at: new Date().toISOString(),
-              };
-              addMessage(contentMessage);
+              // Execute actions (this would be handled by the IDE's file system)
+              for (const action of data.actions) {
+                if (action.action === 'createFile') {
+                  console.log(`📄 Creating file: ${action.path}`);
+                  // In a real implementation, this would create the actual file
+                  // For now, we'll simulate it
+                  toast.success(`Created ${action.path}`);
+                } else if (action.action === 'runCommands') {
+                  console.log(`🚀 Running commands:`, action.commands);
+                  toast.success(`Running: ${action.commands.join(', ')}`);
+                }
+              }
 
-              return; // Exit after successful file creation
-            } catch (error) {
-              console.error('Failed to create file:', error);
-              const errorMessage: Message = {
-                id: (Date.now() + Math.random()).toString(),
-                type: 'ai',
-                content: `❌ Failed to create file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                created_at: new Date().toISOString(),
-              };
-              addMessage(errorMessage);
               return;
+            } else {
+              // Regular conversation response
+              const aiMessage: Message = {
+                id: (Date.now() + Math.random()).toString(),
+                type: 'ai',
+                content: data.response,
+                created_at: new Date().toISOString(),
+              };
+              addMessage(aiMessage);
             }
+          } else {
+            throw new Error(data.error || 'AI request failed');
           }
-        } catch (jsonError) {
-          // Not a JSON action, treat as regular response
-          console.log('Not a JSON action, treating as regular response');
+        } catch (error) {
+          console.error('AI Agent error:', error);
+          const errorMessage: Message = {
+            id: (Date.now() + Math.random()).toString(),
+            type: 'ai',
+            content: `❌ AI Agent error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            created_at: new Date().toISOString(),
+          };
+          addMessage(errorMessage);
         }
-
-        // If not a JSON action or if JSON parsing failed, show the response as regular text
-        const aiMessage: Message = {
-          id: (Date.now() + Math.random()).toString(),
-          type: 'ai',
-          content: aiResponse,
-          created_at: new Date().toISOString(),
-        };
-        addMessage(aiMessage);
       } else {
         // Regular conversational response
         console.log('Using conversational response...');
