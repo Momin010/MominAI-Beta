@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getConversationalResponse } from '../../src/IDE/services/aiService';
+// import { getConversationalResponse } from '../../src/IDE/services/aiService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('Conversation API called with AI service');
@@ -10,8 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { prompt, mode = 'ask' } = req.body;
 
+  console.log('Request body received:', {
+    hasPrompt: !!prompt,
+    promptType: typeof prompt,
+    promptLength: prompt?.length,
+    mode,
+    fullBody: req.body
+  });
+
   if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
+    console.log('Prompt validation failed - returning 400');
+    return res.status(400).json({
+      error: 'Prompt is required',
+      debug: { receivedBody: req.body }
+    });
   }
 
   try {
@@ -25,8 +37,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       googleLength: process.env.GOOGLE_AI_API_KEY?.length
     });
 
-    // The getConversationalResponse function will handle the OpenRouter -> Google fallback
-    const result = await getConversationalResponse(prompt, mode, null);
+    // Dynamic import to avoid static import issues
+    let result: string;
+    try {
+      const { getConversationalResponse } = await import('../../src/IDE/services/aiService');
+      result = await getConversationalResponse(prompt, mode, null);
+    } catch (importError) {
+      console.error('Failed to import AI service:', importError);
+      throw new Error('AI service import failed');
+    }
 
     console.log('AI response generated successfully, length:', result.length);
 
