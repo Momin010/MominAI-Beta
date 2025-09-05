@@ -194,6 +194,8 @@ Make it production-ready with:
 - Clean, maintainable code`;
 
   let codeResponse;
+  let apiFailed = false;
+
   try {
     if (openRouterKey) {
       console.log('🔄 Calling OpenRouter API...');
@@ -206,28 +208,26 @@ Make it production-ready with:
       console.log('✅ Google code generation successful');
     } else {
       console.error('❌ No API keys available');
-      return NextResponse.json({
-        success: false,
-        error: 'No API keys configured',
-        type: 'agent'
-      });
+      apiFailed = true;
     }
   } catch (error) {
     console.error('❌ Code generation failed:', error);
-    return NextResponse.json({
-      success: false,
-      error: `Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      type: 'agent'
-    });
+    apiFailed = true;
+  }
+
+  // If API failed, use demo project
+  if (apiFailed || !codeResponse) {
+    console.log('🔄 Using fallback demo project...');
+    // Continue to demo project creation below
   }
 
   // Step 3: Parse and execute file creation
-  if (codeResponse) {
+  if (codeResponse && !apiFailed) {
     try {
       const parsedResponse = JSON.parse(codeResponse);
 
       if (parsedResponse.files) {
-        console.log('📁 Creating files...');
+        console.log('📁 Creating files from AI response...');
 
         // Create project directory structure
         const projectPath = projectId ? `projects/${projectId}` : 'projects/generated-app';
@@ -265,11 +265,14 @@ Make it production-ready with:
       }
     } catch (parseError) {
       console.warn('Failed to parse AI response:', parseError);
+      apiFailed = true; // Force fallback to demo
     }
   }
 
-  // Fallback: Create a demo project if AI fails
-  console.log('🔄 Using fallback demo project...');
+  // Fallback: Create a demo project if AI fails or no response
+  if (apiFailed || !codeResponse) {
+    console.log('🔄 Using fallback demo project...');
+  }
 
   const demoProject = {
     files: {
