@@ -3,8 +3,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import type { Message, EditorAIAction, FileSystemNode, EditorActionCommand } from '../types';
 import { streamAIActions } from '../services/aiService.ts';
 import * as editorAgent from '../services/editorAgent.ts';
-import { useNotifications } from '../App.tsx';
-import { getAllFiles } from '../utils/fsUtils.ts';
+import toast from 'react-hot-toast';
 
 interface AIContextType {
     messages: Message[];
@@ -43,19 +42,31 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
         { sender: 'ai', text: "Hello! I am your AI assistant. I will edit your code directly. Tell me what you'd like to do." }
     ]);
     const [isLoading, setIsLoading] = useState(false);
-    const { addNotification } = useNotifications();
 
     const sendMessage = useCallback(async (prompt: string) => {
         if (isLoading || !fs || !editorInstance) {
-            addNotification({ type: 'warning', message: 'AI Agent is not ready. Please wait.'});
+            toast.error('AI Agent is not ready. Please wait.');
             return;
         }
         if (!geminiApiKey) {
-            addNotification({ type: 'error', message: 'Please set your Gemini API key in the settings to use AI features.' });
+            toast.error('Please set your Gemini API key in the settings to use AI features.');
             setActiveTab('settings');
             return;
         }
         setIsLoading(true);
+
+        const getAllFiles = (node: FileSystemNode | null, currentPath: string): {path: string, content: string}[] => {
+            if (!node) return [];
+            const files: {path: string, content: string}[] = [];
+            if (node.type === 'file' && node.content) {
+                files.push({ path: currentPath, content: node.content });
+            } else if (node.type === 'directory' && node.children) {
+                Object.entries(node.children).forEach(([name, child]) => {
+                    files.push(...getAllFiles(child, currentPath + '/' + name));
+                });
+            }
+            return files;
+        };
 
         const allFiles = getAllFiles(fs, '/');
         const userMessage: Message = { sender: 'user', text: prompt };
@@ -67,35 +78,42 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
             for await (const action of actionStream) {
                 switch (action.action) {
                     case 'openFile':
-                        setActiveTab(action.path);
+                        if (action.path) setActiveTab(action.path);
                         // Brief pause to allow editor to switch models
                         await new Promise(resolve => setTimeout(resolve, 100));
                         break;
                     case 'createFile':
-                        await createNode(action.path, 'file', action.content);
-                        setActiveTab(action.path);
+                        if (action.path) {
+                            await createNode(action.path, 'file', action.content);
+                            setActiveTab(action.path);
+                        }
                         await new Promise(resolve => setTimeout(resolve, 100));
                         break;
                     case 'type':
-                        await editorAgent.typeText(editorInstance, action.text);
+                        if (action.text) await editorAgent.typeText(editorInstance, action.text);
                         break;
                     case 'moveCursor':
-                        await editorAgent.moveCursor(editorInstance, action.line, action.column);
+                        if (action.line !== undefined && action.column !== undefined) {
+                            await editorAgent.moveCursor(editorInstance, action.line, action.column);
+                        }
                         break;
                     case 'delete':
-                        await editorAgent.deleteText(editorInstance, action.lines);
+                        if (action.lines !== undefined) await editorAgent.deleteText(editorInstance, action.lines);
                         break;
                     case 'select':
-                        await editorAgent.selectText(editorInstance, action.startLine, action.startColumn, action.endLine, action.endColumn);
+                        if (action.startLine !== undefined && action.startColumn !== undefined &&
+                            action.endLine !== undefined && action.endColumn !== undefined) {
+                            await editorAgent.selectText(editorInstance, action.startLine, action.startColumn, action.endLine, action.endColumn);
+                        }
                         break;
                     case 'replace':
-                         await editorAgent.replaceText(editorInstance, action.text);
+                         if (action.text) await editorAgent.replaceText(editorInstance, action.text);
                         break;
                     case 'comment':
-                        setMessages(prev => [...prev, { sender: 'ai', text: action.text }]);
+                        if (action.text) setMessages(prev => [...prev, { sender: 'ai', text: action.text }]);
                         break;
                     case 'finish':
-                        setMessages(prev => [...prev, { sender: 'ai', text: action.reason }]);
+                        setMessages(prev => [...prev, { sender: 'ai', text: action.text || 'Task completed' }]);
                         setIsLoading(false);
                         return; // End of operation
                     default:
@@ -104,18 +122,18 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unknown error occurred with the AI agent.";
-            addNotification({ type: 'error', message });
+            toast.error(message);
             setMessages(prev => [...prev, {sender: 'ai', text: `An error occurred: ${message}`}]);
         } finally {
             setIsLoading(false);
         }
 
-    }, [isLoading, fs, geminiApiKey, addNotification, editorInstance, createNode, setActiveTab]);
+    }, [isLoading, fs, geminiApiKey, editorInstance, createNode, setActiveTab]);
 
     const performEditorAction = useCallback(async (action: EditorAIAction, code: string, filePath: string) => {
         // This function can now be simplified or routed through the main agent
-        addNotification({ type: 'info', message: 'This action is now handled by the main AI chat. Please ask the assistant directly.'})
-    }, [addNotification]);
+        toast('This action is now handled by the main AI chat. Please ask the assistant directly.', { icon: 'ℹ️' })
+    }, []);
 
 
     const value = { messages, isLoading, sendMessage, performEditorAction, geminiApiKey, createNode, openFile };
