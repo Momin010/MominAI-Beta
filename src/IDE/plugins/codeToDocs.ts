@@ -26,6 +26,10 @@ export const codeToDocsPlugin: Plugin = {
                 api.showNotification({ type: 'info', message: 'Generating documentation...' });
                 try {
                     const apiKey = JSON.parse(localStorage.getItem('geminiApiKey') || 'null');
+                    if (!filePath) {
+                        api.showNotification({ type: 'error', message: 'No active file to generate docs for.' });
+                        return;
+                    }
                     const docContent = await generateDocsForCode(content, filePath, apiKey);
                     const docPath = filePath.substring(0, filePath.lastIndexOf('.')) + '.md';
                     api.createNode(docPath, 'file', docContent);
