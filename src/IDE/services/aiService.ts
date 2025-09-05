@@ -2,6 +2,35 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { Diagnostic, DependencyReport, AIFixResponse, EditorActionCommand } from '../types';
 
+// OpenRouter API integration
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_MODEL = "anthropic/claude-3-haiku";
+
+const callOpenRouterAPI = async (messages: any[], apiKey: string): Promise<string> => {
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://momin-ai-beta.vercel.app',
+      'X-Title': 'MominAI IDE'
+    },
+    body: JSON.stringify({
+      model: DEFAULT_MODEL,
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 2000
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+};
+
 const getAiClient = (apiKey: string | null): GoogleGenerativeAI => {
     if (!apiKey) {
         throw new Error("Gemini API key not found. Please set it in the settings panel.");
@@ -239,8 +268,6 @@ export const getCodeExplanation = async (code: string, apiKey: string | null): P
 };
 
 export const getConversationalResponse = async (prompt: string, mode: string = 'ask', apiKey: string | null): Promise<string> => {
-    const ai = getAiClient(apiKey);
-
     const getSystemPrompt = (currentMode?: string) => {
         const basePrompt = `You are a professional AI coding assistant specialized in React, TypeScript, and modern web development. Generate high-quality, production-ready code with extensive styling and animations.
 
@@ -311,8 +338,26 @@ Generate complete, professional React components with extensive Tailwind CSS sty
     };
 
     const systemPrompt = getSystemPrompt(mode);
-    const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+    ];
 
+    // Try OpenRouter first
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterKey) {
+        try {
+            console.log('Attempting to use OpenRouter API...');
+            return await callOpenRouterAPI(messages, openRouterKey);
+        } catch (error) {
+            console.warn('OpenRouter API failed, falling back to Google Gemini:', error);
+        }
+    }
+
+    // Fallback to Google Gemini
+    console.log('Using Google Gemini API as fallback...');
+    const ai = getAiClient(apiKey);
+    const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
     const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const response = await model.generateContent(fullPrompt);
 
