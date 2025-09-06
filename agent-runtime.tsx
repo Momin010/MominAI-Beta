@@ -1,7 +1,7 @@
 "use client";
 
-import { runAgent } from "@/lib/action-executor";
-import { useIdeState } from "@/lib/ide-api";
+import { runAgent } from "@/action-executor";
+import { useIdeState } from "@/ide-api";
 import { useState } from "react";
 
 export function AgentRuntime() {
