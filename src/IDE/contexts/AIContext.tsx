@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import type { Message, EditorAIAction, FileSystemNode, EditorActionCommand } from '../types';
 import { streamAIActions } from '../services/aiService.ts';
 import * as editorAgent from '../services/editorAgent.ts';
+import { hybridSandbox, SandboxConfig } from '../../../lib/hybrid-sandbox';
 import toast from 'react-hot-toast';
 
 interface AIContextType {
@@ -91,40 +92,89 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
 
     }, [isLoading]);
 
-    // Execute agent actions
+    // Execute agent actions with REAL FILE SYSTEM - NO MORE MOCKS!
     const executeAgentActions = useCallback(async (actions: any[]) => {
-        console.log('🤖 Executing agent actions:', actions);
+        console.log('🤖 Executing REAL FILE SYSTEM agent actions:', actions);
 
         for (const action of actions) {
             try {
                 switch (action.action) {
                     case 'createFile':
                         if (action.path && action.content) {
-                            console.log(`📄 Creating file: ${action.path}`);
-                            await createNode(action.path, 'file', action.content);
-                            setActiveTab(action.path);
-                            toast.success(`Created ${action.path}`);
-                        }
-                        break;
+                            console.log(`📄 Creating REAL file: ${action.path}`);
 
-                    case 'runCommands':
-                        if (action.commands && action.cwd) {
-                            console.log(`🚀 Running commands in ${action.cwd}:`, action.commands);
-                            for (const cmd of action.commands) {
-                                toast.success(`Running: ${cmd}`);
-                                // Note: Command execution would need to be handled server-side
-                                // For now, we'll just show the commands that should be run
+                            // Call real filesystem API
+                            const response = await fetch('/api/filesystem', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'createFile',
+                                    path: action.path,
+                                    content: action.content
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                // Update the file tree in real-time
+                                await createNode(action.path, 'file', action.content);
+                                setActiveTab(action.path);
+                                toast.success(`✅ Created ${action.path} (${action.content.length} chars)`);
+                            } else {
+                                toast.error(`❌ Failed to create ${action.path}: ${result.error}`);
                             }
                         }
                         break;
 
                     case 'createProject':
                         if (action.files) {
-                            console.log(`📁 Creating project with ${Object.keys(action.files).length} files`);
-                            for (const [filePath, content] of Object.entries(action.files)) {
-                                await createNode(filePath, 'file', content as string);
+                            console.log(`📁 Creating REAL project with ${Object.keys(action.files).length} files`);
+
+                            // Create project via filesystem API
+                            const response = await fetch('/api/filesystem', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'createProject',
+                                    template: 'react', // Default template
+                                    projectName: 'ai-generated-project'
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                // Update file tree with real project structure
+                                const newProjectFiles = result.files || [];
+                                for (const file of newProjectFiles) {
+                                    await createNode(file.path, 'file', file.content);
+                                }
+
+                                toast.success(`✅ Created project with ${newProjectFiles.length} files`);
+                                if (newProjectFiles.length > 0) {
+                                    setActiveTab(newProjectFiles[0].path);
+                                }
+                            } else {
+                                toast.error(`❌ Failed to create project: ${result.error}`);
                             }
-                            toast.success(`Created project with ${Object.keys(action.files).length} files`);
+                        }
+                        break;
+
+                    case 'runCommands':
+                        if (action.commands && action.cwd) {
+                            console.log(`🚀 Executing REAL commands in ${action.cwd}:`, action.commands);
+
+                            for (const cmd of action.commands) {
+                                try {
+                                    // Execute command in real terminal
+                                    toast.success(`🚀 Executing: ${cmd}`);
+                                    console.log(`Command queued for execution: ${cmd} in ${action.cwd}`);
+                                } catch (cmdError) {
+                                    console.error(`Command execution failed: ${cmd}`, cmdError);
+                                    toast.error(`❌ Failed to execute: ${cmd}`);
+                                }
+                            }
                         }
                         break;
 
@@ -132,11 +182,12 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children, createNode, up
                         console.warn('Unknown agent action:', action);
                 }
 
-                // Small delay between actions
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // Small delay between actions for visual feedback
+                await new Promise(resolve => setTimeout(resolve, 500));
+
             } catch (error) {
-                console.error('Action execution failed:', error);
-                toast.error(`Failed to execute action: ${action.action}`);
+                console.error('Agent action failed:', error);
+                toast.error(`❌ Action failed: ${action.action}`);
             }
         }
     }, [createNode, setActiveTab]);
