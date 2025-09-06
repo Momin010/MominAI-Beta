@@ -120,7 +120,7 @@ export class HybridSandbox {
 
     try {
       // Mount files
-      await this.webContainer.mount({
+      await this.webContainer!.mount({
         'package.json': {
           file: {
             contents: JSON.stringify({
